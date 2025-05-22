@@ -2,6 +2,7 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.point.lock.SynchronizedLockTemplate;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,8 @@ public class PointService {
 
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
+
+    private final SynchronizedLockTemplate<Long> template = new SynchronizedLockTemplate<>();
 
     /**
      * userId 로 userPoint 조회
@@ -55,18 +58,20 @@ public class PointService {
      * @return UserPoint
      */
     public UserPoint chargePoint(final long userId, final long amount) {
-        synchronized ((Object) userId) {
+
+        return template.executeWithLock(userId, () -> {
             final UserPoint originUserPoint = retrieveUserPointByUserId(userId);
             final long remainingPoint = originUserPoint.charge(amount).point();
 
-            log.info("[CHARGE] - user id: {}, origin point: {}, input point: {}, remaining point : {}", userId, originUserPoint.point(), amount, remainingPoint);
+            log.info("user id: {}, origin point: {}, remaining point : {}", userId, originUserPoint.point(), remainingPoint);
 
             final UserPoint userPoint = userPointTable.insertOrUpdate(userId, remainingPoint);
 
             pointHistoryTable.insert(userId, amount, TransactionType.CHARGE, System.currentTimeMillis());
 
             return userPoint;
-        }
+        });
+
     }
 
     /**
@@ -77,18 +82,17 @@ public class PointService {
      * @return UserPoint
      */
     public UserPoint usePoint(final long userId, final long amount) {
-        synchronized ((Object) userId) {
+        return template.executeWithLock(userId, () -> {
             final UserPoint originUserPoint = retrieveUserPointByUserId(userId);
             final long remainingPoint = originUserPoint.use(amount).point();
 
-            log.info("[USE] - user id: {}, origin point: {}, input point: {}, remaining point : {}", userId, originUserPoint.point(), amount, remainingPoint);
+            log.info("user id: {}, origin point: {}, remaining point : {}", userId, originUserPoint.point(), remainingPoint);
 
             final UserPoint userPoint = userPointTable.insertOrUpdate(userId, remainingPoint);
 
-            pointHistoryTable.insert(userId, remainingPoint, TransactionType.USE, System.currentTimeMillis());
+            pointHistoryTable.insert(userId, amount, TransactionType.USE, System.currentTimeMillis());
 
             return userPoint;
-        }
+        });
     }
-
 }

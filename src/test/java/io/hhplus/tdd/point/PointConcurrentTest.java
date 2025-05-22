@@ -30,7 +30,7 @@ class PointConcurrentTest {
     PointService pointService;
 
     final int threadCount = 50;
-    final long userId = 1L;
+    final long userId = 127L;
     final int executeCount = 100;
     final long chargeAmount = 10000L;
     final long usingAmount = 1000L;
