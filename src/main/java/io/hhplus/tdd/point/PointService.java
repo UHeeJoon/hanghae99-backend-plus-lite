@@ -54,19 +54,19 @@ public class PointService {
      * @param amount 포인트 충전할 금액
      * @return UserPoint
      */
-    public synchronized UserPoint chargePoint(final long userId, final long amount) {
+    public UserPoint chargePoint(final long userId, final long amount) {
+        synchronized ((Object) userId) {
+            final UserPoint originUserPoint = retrieveUserPointByUserId(userId);
+            final long remainingPoint = originUserPoint.charge(amount).point();
 
-        final UserPoint originUserPoint = retrieveUserPointByUserId(userId);
-        final long remainingPoint = originUserPoint.charge(amount).point();
+            log.info("[CHARGE] - user id: {}, origin point: {}, input point: {}, remaining point : {}", userId, originUserPoint.point(), amount, remainingPoint);
 
-        log.info("[CHARGE] - user id: {}, origin point: {}, input point: {}, remaining point : {}", userId, originUserPoint.point(), amount, remainingPoint);
+            final UserPoint userPoint = userPointTable.insertOrUpdate(userId, remainingPoint);
 
-        final UserPoint userPoint = userPointTable.insertOrUpdate(userId, remainingPoint);
+            pointHistoryTable.insert(userId, amount, TransactionType.CHARGE, System.currentTimeMillis());
 
-        pointHistoryTable.insert(userId, amount, TransactionType.CHARGE, System.currentTimeMillis());
-
-        return userPoint;
-
+            return userPoint;
+        }
     }
 
     /**
@@ -76,18 +76,19 @@ public class PointService {
      * @param amount 포인트 사용할 금액
      * @return UserPoint
      */
-    public synchronized UserPoint usePoint(final long userId, final long amount) {
+    public UserPoint usePoint(final long userId, final long amount) {
+        synchronized ((Object) userId) {
+            final UserPoint originUserPoint = retrieveUserPointByUserId(userId);
+            final long remainingPoint = originUserPoint.use(amount).point();
 
-        final UserPoint originUserPoint = retrieveUserPointByUserId(userId);
-        final long remainingPoint = originUserPoint.use(amount).point();
+            log.info("[USE] - user id: {}, origin point: {}, input point: {}, remaining point : {}", userId, originUserPoint.point(), amount, remainingPoint);
 
-        log.info("[USE] - user id: {}, origin point: {}, input point: {}, remaining point : {}", userId, originUserPoint.point(), amount, remainingPoint);
+            final UserPoint userPoint = userPointTable.insertOrUpdate(userId, remainingPoint);
 
-        final UserPoint userPoint = userPointTable.insertOrUpdate(userId, remainingPoint);
+            pointHistoryTable.insert(userId, remainingPoint, TransactionType.USE, System.currentTimeMillis());
 
-        pointHistoryTable.insert(userId, remainingPoint, TransactionType.USE, System.currentTimeMillis());
-
-        return userPoint;
+            return userPoint;
+        }
     }
 
 }

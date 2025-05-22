@@ -8,9 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,6 +44,7 @@ class PointConcurrentTest {
         final CountDownLatch latch = new CountDownLatch(executeCount);
 
         for (int i = 0; i < executeCount; i++) {
+//            final long userId = i;
             executor.submit(() -> {
                 pointService.chargePoint(userId, chargeAmount);
                 latch.countDown();
@@ -50,9 +53,12 @@ class PointConcurrentTest {
 
         latch.await();
         executor.shutdown();
-        UserPoint userPoint = pointService.retrieveUserPointByUserId(userId);
+//        var list = IntStream.range(0, executeCount).mapToLong((i) -> pointService.retrieveUserPointByUserId(userId).point()).boxed().toList();
+//        assertThat(list).allMatch((point) -> point == chargeAmount);;
 
-        assertThat(userPoint.point()).isEqualTo(chargeAmount * executeCount);
+        final UserPoint userPoint = pointService.retrieveUserPointByUserId(userId);
+        assertThat(userPoint.point()).isEqualTo(executeCount * chargeAmount);
+
 
     }
 
