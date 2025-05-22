@@ -54,7 +54,7 @@ public class PointService {
      * @param amount 포인트 충전할 금액
      * @return UserPoint
      */
-    public UserPoint chargePoint(final long userId, final long amount) {
+    public synchronized UserPoint chargePoint(final long userId, final long amount) {
 
         final UserPoint originUserPoint = retrieveUserPointByUserId(userId);
         final long remainingPoint = originUserPoint.charge(amount).point();
@@ -76,7 +76,7 @@ public class PointService {
      * @param amount 포인트 사용할 금액
      * @return UserPoint
      */
-    public UserPoint usePoint(final long userId, final long amount) {
+    public synchronized UserPoint usePoint(final long userId, final long amount) {
 
         final UserPoint originUserPoint = retrieveUserPointByUserId(userId);
         final long remainingPoint = originUserPoint.use(amount).point();
