@@ -63,7 +63,7 @@ public class PointService {
             final UserPoint originUserPoint = retrieveUserPointByUserId(userId);
             final long remainingPoint = originUserPoint.charge(amount).point();
 
-            log.info("user id: {}, origin point: {}, remaining point : {}", userId, originUserPoint.point(), remainingPoint);
+            log.info("[CHARGE] user id: {}, origin point: {}, input point: {}, remaining point : {}", userId, originUserPoint.point(), amount, remainingPoint);
 
             final UserPoint userPoint = userPointTable.insertOrUpdate(userId, remainingPoint);
 
@@ -86,7 +86,7 @@ public class PointService {
             final UserPoint originUserPoint = retrieveUserPointByUserId(userId);
             final long remainingPoint = originUserPoint.use(amount).point();
 
-            log.info("user id: {}, origin point: {}, remaining point : {}", userId, originUserPoint.point(), remainingPoint);
+            log.info("[USE] user id: {}, origin point: {}, input point: {}.  remaining point : {}", userId, originUserPoint.point(), amount, remainingPoint);
 
             final UserPoint userPoint = userPointTable.insertOrUpdate(userId, remainingPoint);
 
